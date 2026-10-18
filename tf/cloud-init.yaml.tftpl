@@ -1,0 +1,42 @@
+#cloud-config
+hostname: ${hostname}
+fqdn: ${hostname}
+manage_etc_hosts: true
+
+users:
+  - default
+  - name: ${guest_user}
+    groups: [wheel]
+    shell: /bin/ash
+    # Do NOT lock the account: Alpine's OpenSSH runs with UsePAM off and refuses
+    # locked accounts (shadow entry starting with "!") even for public-key auth.
+    # "lock_passwd: false" plus the explicit usermod below yields a "*" entry
+    # ("no password"), which OpenSSH accepts; password login stays disabled via
+    # ssh_pwauth/PasswordAuthentication.
+    lock_passwd: false
+    ssh_authorized_keys:
+      - ${ssh_public_key}
+
+# SSH server policy enforced through cloud-init's Alpine support.
+ssh_pwauth: false
+disable_root: true
+
+write_files:
+  - path: /etc/ssh/sshd_config.d/60-cloud.conf
+    permissions: "0644"
+    content: |
+      PasswordAuthentication no
+      KbdInteractiveAuthentication no
+      PermitRootLogin prohibit-password
+      PubkeyAuthentication yes
+
+runcmd:
+  # Ensure the login account is not locked (see lock_passwd note above).
+  - usermod -p '*' ${guest_user}
+  - mkdir -p /etc/ssh/sshd_config.d
+  - |
+    if ! grep -q '^Include /etc/ssh/sshd_config.d/' /etc/ssh/sshd_config; then
+      sed -i '1i Include /etc/ssh/sshd_config.d/*.conf' /etc/ssh/sshd_config
+    fi
+  - rc-update add sshd default
+  - rc-service sshd restart
