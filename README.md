@@ -88,6 +88,22 @@ flowchart LR
     J --> L[SSH: ssh -i ~/.ssh/id_ed25519 -o IdentitiesOnly=yes synk@192.168.123.50]
 ```
 
+## Specs
+
+Intended behavior is codified in [`specs/`](specs/), one specification per capability:
+
+| Spec | Covers |
+|---|---|
+| [`host-bootstrap`](specs/host-bootstrap/spec.md) | `day0.sh`: packages, daemons, libvirt group, default pool |
+| [`host-only-network`](specs/host-only-network/spec.md) | Isolated bridge, DHCP, static reservation |
+| [`storage`](specs/storage/spec.md) | Base image, CoW root overlay, cloud-init seed ISO |
+| [`domain`](specs/domain/spec.md) | KVM q35 machine, ACPI/APIC, disks, NIC |
+| [`guest-cloud-init`](specs/guest-cloud-init/spec.md) | User creation, key injection, sshd hardening |
+| [`connectivity`](specs/connectivity/spec.md) | Lease-based outputs, key-only SSH, isolation |
+| [`state`](specs/state/spec.md) | Local state, gitignored, re-apply recovery |
+
+Each spec uses OpenSpec format (`Purpose` → `Requirements` → `Scenarios`) and is the source of truth for what the stack is supposed to do.
+
 ## Key Design Notes
 
 - **Host-only isolation**: No `forward` block in the libvirt network → no NAT/uplink; only reachable from the host. Guest-to-guest traffic allowed.
