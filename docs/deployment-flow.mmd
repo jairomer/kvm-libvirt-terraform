@@ -1,0 +1,12 @@
+flowchart LR
+    A["Day 0: sudo ./day0.sh"] --> B["Host ready: daemons, libvirt group, default pool"]
+    B --> C[tofu init]
+    C --> D[tofu plan]
+    D --> E[tofu apply]
+    E --> F[Network created]
+    E --> G["Volumes: base/root/cloudinit ISO"]
+    E --> H["Domain created & boots"]
+    H --> I["Cloud-init runs (NoCloud)"]
+    I --> J["User synk created, keys injected, sshd configured"]
+    I --> K["Guest gets static lease 192.168.123.50"]
+    J --> L["SSH: ssh -i ~/.ssh/id_ed25519 -o IdentitiesOnly=yes synk@192.168.123.50"]

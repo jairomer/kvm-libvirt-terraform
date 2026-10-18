@@ -4,59 +4,9 @@ This project provisions an Alpine Linux VM on libvirt using OpenTofu, with SSH c
 
 ## Architecture
 
-```mermaid
-graph TB
-    subgraph Host["Host OS (openSUSE Tumbleweed)"]
-        subgraph Libvirt["libvirt - Modular Daemons"]
-            VQ[virtqemud.socket]
-            VN[virtnetworkd]
-            VS[virtstoraged]
-            VL[virtlogd/virtlockd]
-        end
+![Architecture](docs/architecture.svg)
 
-        subgraph OTF["OpenTofu"]
-            TF[tf/*.tf]
-            Prov[provider: dmacvicar/libvirt 0.9.9]
-            State[terraform.tfstate]
-        end
-
-        subgraph Net["Host-Only Network"]
-            BR[virbr-tofu bridge<br/>192.168.123.1/24]
-            DNS[dnsmasq via virtnetworkd]
-        end
-
-        subgraph Pool["Storage Pool default"]
-            Base[base qcow2 - Alpine cloud image]
-            Root[root qcow2 - CoW overlay]
-            CI[cloudinit.iso - cidata seed]
-        end
-
-        Day0[day0.sh - Host bootstrap]
-    end
-
-    subgraph Guest["Alpine Linux VM"]
-        VM[tofu-vm<br/>KVM, q35, virtio]
-        SSHD[sshd - key-only auth]
-        User[synk (wheel), SSH ed25519 key]
-    end
-
-    Day0 -->|installs pkgs, enables daemons,<br/>adds user to libvirt, ensures pool| Host
-    TF -->|plan/apply| Prov
-    Prov -->|libvirt API over qemu:///system?socket=/run/libvirt/virtqemud-sock| VQ
-    VQ --> VN & VS
-    VN -->|defines/manages| Net
-    VS -->|manages volumes| Pool
-    Prov -->|creates network, volumes, domain| Net
-    Prov -->|creates base/root/cloudinit| Pool
-    Base -.CoW backing.-> Root
-    CI -->|cloud-init NoCloud (cidata)| VM
-    Net -->|host-only bridge, static DHCP (52:54:00:aa:bb:01 -> 192.168.123.50)| VM
-    VM -->|boots from root (vda)| Root
-    VM -->|mounts cidata as cdrom (sda)| CI
-    CI -->|cloud-config: creates user, injects key, configures sshd, unlocks account| User
-    SSHD -->|listens on 0.0.0.0:22| VM
-    Host -.SSH (key-only).-> VM
-```
+> Source: [`docs/architecture.mmd`](docs/architecture.mmd) — regenerate with `npx @mermaid-js/mermaid-cli -i docs/architecture.mmd -o docs/architecture.svg`
 
 ## Components
 
@@ -73,20 +23,9 @@ graph TB
 
 ## Deployment Flow
 
-```mermaid
-flowchart LR
-    A[Day 0: sudo ./day0.sh] --> B[Host ready: daemons, libvirt group, default pool]
-    B --> C[tofu init]
-    C --> D[tofu plan]
-    D --> E[tofu apply]
-    E --> F[Network created]
-    E --> G[Volumes: base/root/cloudinit ISO]
-    E --> H[Domain created & boots]
-    H --> I[Cloud-init runs (NoCloud)]
-    I --> J[User synk created, keys injected, sshd configured]
-    I --> K[Guest gets static lease 192.168.123.50]
-    J --> L[SSH: ssh -i ~/.ssh/id_ed25519 -o IdentitiesOnly=yes synk@192.168.123.50]
-```
+![Deployment Flow](docs/deployment-flow.svg)
+
+> Source: [`docs/deployment-flow.mmd`](docs/deployment-flow.mmd) — regenerate with `npx @mermaid-js/mermaid-cli -i docs/deployment-flow.mmd -o docs/deployment-flow.svg`
 
 ## Specs
 
