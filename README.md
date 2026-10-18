@@ -6,26 +6,26 @@ This project provisions an Alpine Linux VM on libvirt using OpenTofu, with SSH c
 
 ```mermaid
 graph TB
-    subgraph Host [Host OS (openSUSE Tumbleweed)]
-        subgraph Libvirt[libvirt - Modular Daemons]
+    subgraph Host["Host OS (openSUSE Tumbleweed)"]
+        subgraph Libvirt["libvirt - Modular Daemons"]
             VQ[virtqemud.socket]
             VN[virtnetworkd]
             VS[virtstoraged]
             VL[virtlogd/virtlockd]
         end
 
-        subgraph OTF[OpenTofu]
+        subgraph OTF["OpenTofu"]
             TF[tf/*.tf]
             Prov[provider: dmacvicar/libvirt 0.9.9]
             State[terraform.tfstate]
         end
 
-        subgraph Net[Host-Only Network]
+        subgraph Net["Host-Only Network"]
             BR[virbr-tofu bridge<br/>192.168.123.1/24]
             DNS[dnsmasq via virtnetworkd]
         end
 
-        subgraph Pool[Storage Pool default]
+        subgraph Pool["Storage Pool default"]
             Base[base qcow2 - Alpine cloud image]
             Root[root qcow2 - CoW overlay]
             CI[cloudinit.iso - cidata seed]
@@ -34,7 +34,7 @@ graph TB
         Day0[day0.sh - Host bootstrap]
     end
 
-    subgraph Guest[Alpine Linux VM]
+    subgraph Guest["Alpine Linux VM"]
         VM[tofu-vm<br/>KVM, q35, virtio]
         SSHD[sshd - key-only auth]
         User[synk (wheel), SSH ed25519 key]
